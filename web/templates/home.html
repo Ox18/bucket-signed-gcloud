@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home</title>
+    <!-- JavaScript -->
+    <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/alertify.min.js"></script>
+
+    <!-- CSS -->
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/alertify.min.css"
+    />
+    <!-- Default theme -->
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/default.min.css"
+    />
+    <!-- Semantic UI theme -->
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/semantic.min.css"
+    />
+    <!-- Bootstrap theme -->
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <h1>Bienvenido nuevamente</h1>
+
+    <div>
+      <input type="file" id="file" name="file" />
+      <button id="upload">Upload</button>
+    </div>
+    <div class="section-logout" style="display: none; margin-top: 60px">
+      <button id="logout">Logout</button>
+    </div>
+    <script>
+      // Función helper para fetch con pre-request y post-request
+      async function apiFetch(url, options = {}) {
+        // Obtener token del sessionStorage
+        const token = sessionStorage.getItem("token");
+
+        // Validar si el token existe
+        if (!token) {
+          alertify.error("Your session has expired. Please log in again.");
+          window.location.href = "/login";
+          throw new Error("No token provided");
+        }
+
+        // Agregar cabeceras por defecto (Authorization)
+        const headers = options.headers || {};
+        headers["Authorization"] = `Bearer ${token}`;
+
+        // Crear la configuración para el fetch
+        const config = {
+          ...options,
+          headers,
+        };
+
+        // Realizar la solicitud
+        const response = await fetch(url, config);
+
+        // Post-request: Validar si el token es inválido o ha expirado
+        if (response.status === 401) {
+          sessionStorage.removeItem("token");
+          alertify.error("Your session has expired. Please log in again.");
+          window.location.href = "/login";
+          throw new Error("Unauthorized request");
+        }
+
+        return response;
+      }
+
+      // Lógica al cargar la página
+      window.onload = async () => {
+        try {
+          const verified = await apiFetch("/api/verify");
+
+          if (verified.status === 200) {
+            document.querySelector(".section-logout").style.display = "block";
+          }
+        } catch (error) {
+          alertify.error("An error occurred during the verification process." + error);
+        }
+      };
+
+      // Lógica para subir un archivo
+      document.getElementById("upload").addEventListener("click", async () => {
+        const file = document.getElementById("file").files[0];
+        if (!file) {
+          alertify.error("Please select a file to upload.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+        const filename = file.name;
+
+        try {
+          // Obtener la URL firmada
+          const response = await apiFetch("/api/pre-upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename }),
+          });
+
+          const data = await response.json();
+
+          if (!data?.signedUrl) {
+            alertify.error("Failed to get the signed URL.");
+            return;
+          }
+
+          const { signedUrl } = data;
+
+          // Subir el archivo a la URL firmada
+          const uploadResponse = await fetch(signedUrl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": file.type,
+            },
+            body: file,
+          });
+
+          
+
+          if (uploadResponse.ok) {
+            alertify.success("File uploaded successfully!");
+          } else {
+            alertify.error("Failed to upload the file.");
+            console.error(
+              "Upload error:",
+              uploadResponse.status,
+              await uploadResponse.text()
+            );
+          }
+        } catch (error) {
+          console.error("Error during upload:", error);
+          alertify.error("An error occurred during the upload process.");
+        }
+      });
+
+      // Lógica para el botón de logout
+      document.getElementById("logout").addEventListener("click", () => {
+        sessionStorage.removeItem("token");
+        window.location.href = "/login";
+      });
+    </script>
+  </body>
+</html>

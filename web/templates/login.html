@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div>
+      <input type="text" name="username" placeholder="Username" />
+      <input type="password" name="password" placeholder="Password" />
+      <button type="submit">Login</button>
+    </div>
+    <script>
+      window.onload = () => {
+        const token = sessionStorage.getItem("token");
+        if (token) {
+          window.location.href = "/";
+        }
+      };
+
+
+      const button = document.querySelector("button");
+      button.addEventListener("click", async () => {
+        const username = document.querySelector('input[name="username"]').value;
+        const password = document.querySelector('input[name="password"]').value;
+
+        if (username.length === 0 || password.length === 0) {
+          alert("Completa el formulario");
+          return;
+        }
+
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await response.json();
+
+        if (data?.error) {
+          alert(
+            "No se pudo iniciar sesión por el siguiente motivo: " + data.error
+          );
+          return;
+        }
+
+        const { token } = data;
+
+        sessionStorage.setItem("token", token);
+
+        window.location.href = "/";
+      });
+    </script>
+  </body>
+</html>
