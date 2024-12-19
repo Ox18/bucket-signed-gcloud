@@ -3,7 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Login</title>
+    <!-- JavaScript -->
+    <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/alertify.min.js"></script>
+
+    <!-- CSS -->
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/alertify.min.css"
+    />
+    <!-- Default theme -->
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/default.min.css"
+    />
+    <!-- Semantic UI theme -->
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/semantic.min.css"
+    />
+    <!-- Bootstrap theme -->
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/bootstrap.min.css"
+    />
   </head>
   <body>
     <div>
@@ -19,14 +42,13 @@
         }
       };
 
-
       const button = document.querySelector("button");
       button.addEventListener("click", async () => {
         const username = document.querySelector('input[name="username"]').value;
         const password = document.querySelector('input[name="password"]').value;
 
         if (username.length === 0 || password.length === 0) {
-          alert("Completa el formulario");
+          alertify.error("Por favor, rellena todos los campos");
           return;
         }
 
@@ -40,7 +62,7 @@
         const data = await response.json();
 
         if (data?.error) {
-          alert(
+          alertify.error(
             "No se pudo iniciar sesión por el siguiente motivo: " + data.error
           );
           return;
